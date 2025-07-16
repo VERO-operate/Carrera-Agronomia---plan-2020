@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrera Agronomía - Plan 2020</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bloqueada {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    .aprobada {
+      background-color: #276749;
+      color: white;
+    }
+    .disponible {
+      background-color: #a0d6b4;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 p-6">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold text-green-800 mb-4">Carrera Agronomía - Plan 2020</h1>
+    <button onclick="resetProgress()" class="mb-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Reiniciar progreso</button>
+    <div id="app" class="space-y-10"></div>
+  </div>
+
+  <script>
+    const materias = [
+      { nombre: "Biología General", año: 1, semestre: 1, previas: [] },
+      { nombre: "Matemática", año: 1, semestre: 1, previas: [] },
+      { nombre: "Física", año: 1, semestre: 1, previas: [] },
+      { nombre: "Química", año: 1, semestre: 1, previas: [] },
+      { nombre: "AFO I", año: 1, semestre: 1, previas: [] },
+
+      { nombre: "Bioquímica", año: 1, semestre: 2, previas: ["Biología General"] },
+      { nombre: "Botánica", año: 1, semestre: 2, previas: ["Biología General"] },
+      { nombre: "Biología Animal", año: 1, semestre: 2, previas: ["Biología General"] },
+
+      { nombre: "Introducción a Geociencias", año: 2, semestre: 1, previas: [] },
+      { nombre: "Edafología", año: 2, semestre: 1, previas: ["Introducción a Geociencias"] },
+      { nombre: "Microbiología", año: 2, semestre: 1, previas: ["Bioquímica"] },
+      { nombre: "Fisiología Vegetal", año: 2, semestre: 1, previas: ["Botánica"] },
+      { nombre: "Teoría Económica", año: 2, semestre: 1, previas: ["Matemática"] },
+      { nombre: "Agrometeorología", año: 2, semestre: 1, previas: ["Introducción a Geociencias"] },
+      { nombre: "Estadística I", año: 2, semestre: 1, previas: ["Matemática"] },
+
+      { nombre: "Fertilidad de Suelos y Fertilizantes", año: 2, semestre: 2, previas: ["Química", "Edafología"] },
+      { nombre: "Genética I", año: 2, semestre: 2, previas: ["Biología General"] },
+      { nombre: "Fisiología Digestiva y Metabolismo", año: 2, semestre: 2, previas: ["Biología Animal"] },
+      { nombre: "Economía Agraria", año: 2, semestre: 2, previas: ["Teoría Económica"] },
+      { nombre: "Ecología de Agroecosistemas", año: 2, semestre: 2, previas: ["Edafología", "Fisiología Vegetal"] },
+      { nombre: "Estadística II", año: 2, semestre: 2, previas: ["Estadística I"] },
+
+      { nombre: "Manejo y Conservación de Suelos y Aguas", año: 3, semestre: 1, previas: ["Edafología"] },
+      { nombre: "Reproducción y Nutrición Animal", año: 3, semestre: 1, previas: ["Fisiología Digestiva y Metabolismo"] },
+      { nombre: "Genética II", año: 3, semestre: 1, previas: ["Genética I", "Estadística I"] },
+      { nombre: "Ecofisiología de Cultivos", año: 3, semestre: 1, previas: ["Fisiología Vegetal"] },
+      { nombre: "AFO II", año: 3, semestre: 1, previas: ["Ecología de Agroecosistemas", "AFO I"] },
+
+      { nombre: "Fitopatología", año: 3, semestre: 2, previas: ["Microbiología"] },
+      { nombre: "Entomología", año: 3, semestre: 2, previas: ["Ecofisiología de Cultivos"] },
+      { nombre: "Fitotecnia", año: 3, semestre: 2, previas: ["Genética II"] },
+      { nombre: "Procesos Sociales", año: 3, semestre: 2, previas: ["Economía Agraria"] }
+    ];
+
+    const aprobadas = JSON.parse(localStorage.getItem("materiasAprobadas") || "[]");
+
+    function toggleAprobada(nombre) {
+      const idx = aprobadas.indexOf(nombre);
+      if (idx === -1) {
+        aprobadas.push(nombre);
+      } else {
+        aprobadas.splice(idx, 1);
+      }
+      localStorage.setItem("materiasAprobadas", JSON.stringify(aprobadas));
+      render();
+    }
+
+    function resetProgress() {
+      localStorage.removeItem("materiasAprobadas");
+      location.reload();
+    }
+
+    function render() {
+      const container = document.getElementById("app");
+      container.innerHTML = "";
+
+      const agrupadas = {};
+      materias.forEach(m => {
+        const key = `Año ${m.año} - Semestre ${m.semestre}`;
+        if (!agrupadas[key]) agrupadas[key] = [];
+        agrupadas[key].push(m);
+      });
+
+      for (const grupo in agrupadas) {
+        const bloque = document.createElement("div");
+        bloque.innerHTML = `<h2 class='text-xl font-semibold text-green-800 mb-2'>${grupo}</h2>`;
+
+        const grid = document.createElement("div");
+        grid.className = "grid grid-cols-2 md:grid-cols-3 gap-4";
+
+        agrupadas[grupo].forEach(m => {
+          const previasOk = m.previas.every(p => aprobadas.includes(p));
+          const aprobada = aprobadas.includes(m.nombre);
+
+          const card = document.createElement("div");
+          card.className = `p-4 rounded shadow cursor-pointer text-center transition-all duration-200 font-medium ${aprobada ? 'aprobada' : previasOk ? 'disponible' : 'bloqueada'}`;
+          card.innerHTML = `<div>${m.nombre}</div>`;
+
+          if (previasOk || aprobada) {
+            card.onclick = () => toggleAprobada(m.nombre);
+          }
+
+          grid.appendChild(card);
+        });
+
+        bloque.appendChild(grid);
+        container.appendChild(bloque);
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
